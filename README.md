@@ -1,25 +1,28 @@
-<<<<<<< HEAD
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# ET Markets AI - Institutional Intelligence for Everyone
 
-# Run and deploy your AI Studio app
+ET Markets AI is a high-performance financial intelligence platform designed for the Indian Stock Market (NSE). It leverages the power of Gemini 3.1 Pro to provide real-time technical and fundamental analysis.
 
-This contains everything you need to run your app locally.
+## 🚀 Key Features
+- **AI Pattern Detection:** Automatically identifies Cup & Handle, Bull Flags, and more.
+- **Deep Analysis Engine:** Instant institutional-grade reports with BUY/SELL/HOLD verdicts.
+- **Simulated Trading:** Test your strategies with a real-time portfolio tracker backed by Firebase.
+- **Market Radar:** High-confidence signals from block deals and corporate filings.
 
-View your app in AI Studio: https://ai.studio/apps/08545b12-b68a-4a08-bdb1-c66bc6226b2c
+## 🛠️ Tech Stack
+- **Frontend:** React 18, Vite, Tailwind CSS, Framer Motion.
+- **AI:** Google Gemini 3.1 Pro API.
+- **Backend:** Firebase Auth & Firestore.
+- **Charts:** Recharts (Market Breadth & Portfolio Allocation).
 
-## Run Locally
-
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
+## 📦 Setup Instructions
+1. **Clone the repository:**
+   `git clone https://github.com/your-username/et-markets-ai.git`
+2. **Install dependencies:**
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
+3. **Environment Variables:**
+   Create a `.env` file and add:
+   `GEMINI_API_KEY=your_api_key_here`
+4. **Firebase Configuration:**
+   Add your `firebase-applet-config.json` to the root directory.
+5. **Run Development Server:**
    `npm run dev`
-=======
-# ET-Markets-AI
-It's a stock market based web app.
->>>>>>> 12ad5de84a3e815a4d378efa305c049a0940b105
