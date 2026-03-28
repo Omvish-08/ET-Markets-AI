@@ -1,0 +1,133 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {userId} (matches auth.uid)
+    // Fields:
+    //   - uid: string (required) - immutable
+    //   - email: string (required) - immutable
+    //   - displayName: string (optional)
+    //   - photoURL: string (optional)
+    //   - role: string (required) - enum ['user', 'admin']
+    //   - createdAt: timestamp (required) - immutable
+    //
+    // Collection: users/{userId}/portfolio
+    // Document ID: {holdingId}
+    // Fields:
+    //   - symbol: string (required)
+    //   - name: string (required)
+    //   - shares: number (required)
+    //   - avgPrice: number (required)
+    //
+    // Collection: users/{userId}/watchlist
+    // Document ID: {watchlistItemId}
+    // Fields:
+    //   - symbol: string (required)
+    //   - name: string (required)
+    //   - addedAt: timestamp (required)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+        (request.auth.token.email == "omvishwakarma7777@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function uidUnchanged() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == request.auth.uid;
+    }
+
+    function uidNotModified() {
+      return !('uid' in request.resource.data) || request.resource.data.uid == resource.data.uid;
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function isValidEmail(email) {
+      return email is string && (email == '' || email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"));
+    }
+
+    function isValidUser(data) {
+      return hasRequiredFields(['uid', 'email', 'role', 'createdAt']) &&
+             data.uid is string && data.uid.size() > 0 && data.uid.size() < 128 &&
+             data.email is string && isValidEmail(data.email) && data.email.size() < 256 &&
+             (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100)) &&
+             (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 2048)) &&
+             data.role in ['user', 'admin'] &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidPortfolioHolding(data) {
+      return hasRequiredFields(['symbol', 'name', 'shares', 'avgPrice']) &&
+             data.symbol is string && data.symbol.size() > 0 && data.symbol.size() <= 20 &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.shares is number && data.shares > 0 &&
+             data.avgPrice is number && data.avgPrice >= 0;
+    }
+
+    function isValidWatchlistItem(data) {
+      return hasRequiredFields(['symbol', 'name', 'addedAt']) &&
+             data.symbol is string && data.symbol.size() > 0 && data.symbol.size() <= 20 &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.addedAt is timestamp;
+    }
+
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated() && 
+                    isOwner(userId) && 
+                    isValidUser(request.resource.data) && 
+                    uidUnchanged() &&
+                    (request.resource.data.role == 'user' || isAdmin());
+      allow update: if isAuthenticated() && 
+                    isOwner(userId) && 
+                    isValidUser(request.resource.data) && 
+                    uidNotModified() &&
+                    areImmutableFieldsUnchanged(['uid', 'email', 'createdAt']) &&
+                    (request.resource.data.role == resource.data.role || isAdmin());
+      allow delete: if isAdmin();
+      
+      match /portfolio/{holdingId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidPortfolioHolding(request.resource.data);
+        allow update: if isOwner(userId) && isValidPortfolioHolding(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+      
+      match /watchlist/{watchlistItemId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidWatchlistItem(request.resource.data);
+        allow update: if isOwner(userId) && isValidWatchlistItem(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}
